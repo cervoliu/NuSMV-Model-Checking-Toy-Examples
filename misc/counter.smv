@@ -1,0 +1,22 @@
+MODULE main
+VAR
+    a : boolean;
+    b : boolean;
+    c : boolean;
+
+ASSIGN
+    init(a) := FALSE;
+    init(b) := FALSE;
+    init(c) := FALSE;
+    next(a) := !a;
+    next(b) := case
+                    a : !b;
+                    TRUE : b;
+               esac;
+    next(c) := case 
+                    a & b : !c;
+                    TRUE : c;
+               esac;
+
+    CTLSPEC AG(!(a & b & c))
+    -- CTLSPEC EF(a & b & c)

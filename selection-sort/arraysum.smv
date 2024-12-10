@@ -1,0 +1,45 @@
+MODULE main
+
+VAR
+    arr : array 0..2 of -16..15;
+    sum : -16..15;
+    i : 0..3;
+    state : {start, loop, end};
+
+DEFINE
+    temp := sum + arr[i];
+
+ASSIGN
+    init(i) := 0;
+    init(sum) := 0;
+    init(state) := start;
+
+    next(state) := case
+        state = start : loop;
+        state = loop & i < 3 : loop;
+        state = loop & i = 3 : end;
+        TRUE : state;
+    esac;
+
+    init(arr[0]) := 15;
+    init(arr[1]) := 15;
+    init(arr[2]) := -15;
+
+    next(arr[0]) := arr[0];
+    next(arr[1]) := arr[1];
+    next(arr[2]) := arr[2];
+
+    next(sum) := case
+        state = loop & i < 3 :
+            (temp > 15 ? temp - 32 : (temp < -16 ? temp + 32 : temp));
+        TRUE : sum;
+    esac;
+
+    next(i) := case
+        state = loop & i < 3 : i + 1;
+        TRUE : i;
+    esac;
+
+LTLSPEC G (state = end -> sum = (arr[0] + arr[1] + arr[2]));
+
+LTLSPEC F (sum > 15 | sum < -16);

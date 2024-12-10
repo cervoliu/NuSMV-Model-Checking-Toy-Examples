@@ -1,0 +1,65 @@
+MODULE main
+
+VAR
+    arr : array 0..2 of 0..100;
+    i : 0..2;
+    j : 1..3;
+    min_idx : 0..2;
+    state : {select, swap, end};
+
+ASSIGN
+    init(i) := 0;
+    init(j) := 1;
+    init(min_idx) := 0;
+    init(state) := select;
+
+    init(arr[0]) := 1;
+    init(arr[1]) := 2;
+    init(arr[2]) := 3;
+
+    next(j) := case
+        (state = end | i = 2) : 3;
+        (state = swap & i < 2) : (i + 2 <= 3 ? i + 2 : 3);
+        (state = select & j < 3) : j + 1;
+        TRUE : j;
+    esac;
+
+    next(min_idx) := case
+        (state = swap) : next(i);
+        (state = select & j < 3 & arr[min_idx] > arr[j]) : j;
+        TRUE : min_idx;
+    esac;
+
+    next(i) := case
+        (state = end | i = 2) : 2;
+        (state = swap) : i + 1;
+        TRUE : i;
+    esac;
+
+    next(state) := case
+        (state = end | i = 2) : end;
+        (state = select & j < 3 & arr[min_idx] > arr[j]) : swap;
+        TRUE : select;
+    esac;
+
+    next(arr[0]) := case
+        (state = swap & i = 0) : arr[min_idx];
+        (state = swap & min_idx = 0) : arr[i];
+        TRUE : arr[0];
+    esac;
+
+    next(arr[1]) := case
+        (state = swap & i = 1) : arr[min_idx];
+        (state = swap & min_idx = 1) : arr[i];
+        TRUE : arr[1];
+    esac;
+
+    next(arr[2]) := case
+        (state = swap & i = 2) : arr[min_idx];
+        (state = swap & min_idx = 2) : arr[i];
+        TRUE : arr[2];
+    esac;
+
+LTLSPEC ! F (state = end);
+
+LTLSPEC ! F G (state = end & arr[0] <= arr[1] & arr[1] <= arr[2]);

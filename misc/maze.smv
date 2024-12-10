@@ -1,0 +1,135 @@
+MODULE main
+
+VAR
+	room1_visited: boolean;
+	room2_visited: boolean;
+	room3_visited: boolean;
+	room4_visited: boolean;
+	room5_visited: boolean;
+	room6_visited: boolean;
+	
+	room1_first: boolean;
+	room2_first: boolean;
+	room3_first: boolean;
+	room4_first: boolean;
+	room5_first: boolean;
+	room6_first: boolean;
+	
+	room: 0..6;
+	yellow_key: 0..5;
+	blue_key: 0..2;
+	red_key: 0..2;
+	alg: boolean;
+
+ASSIGN
+	init(room1_visited) := FALSE;
+	init(room2_visited) := FALSE;
+	init(room3_visited) := FALSE;
+	init(room4_visited) := FALSE;
+	init(room5_visited) := FALSE;
+	init(room6_visited) := FALSE;
+	
+	init(room1_first) := FALSE;
+	init(room2_first) := FALSE;
+	init(room3_first) := FALSE;
+	init(room4_first) := FALSE;
+	init(room5_first) := FALSE;
+	init(room6_first) := FALSE;
+	
+	init(room) := 0;
+	init(yellow_key) := 1;
+	init(blue_key) := 0;
+	init(red_key) := 1;
+	
+	next(room) := case
+		room = 0 & yellow_key > 0 & blue_key > 0 & red_key > 0 : {1, 2, 3, 4, 5, 6};
+		room = 0 & yellow_key > 0 & blue_key > 0 & red_key = 0 : {1, 4, 5, 6};
+		room = 0 & yellow_key > 0 & blue_key = 0 & red_key > 0 : {2, 3, 5, 6};
+		room = 0 & yellow_key > 0 & blue_key = 0 & red_key = 0 : {5, 6};
+		room = 0 & yellow_key = 0 & blue_key > 0 & red_key > 0 : {1, 2, 3, 4};
+		room = 0 & yellow_key = 0 & blue_key > 0 & red_key = 0 : {1, 4};
+		room = 0 & yellow_key = 0 & blue_key = 0 & red_key > 0 : {2, 3};
+		room = 1 & blue_key > 0 : 0;
+		room = 2 & red_key > 0 : 0;
+		room = 3 & red_key > 0 : 0;
+		room = 4 & blue_key > 0 : 0;
+		room = 5 & yellow_key > 0 & blue_key > 0 : {0, 6};
+		room = 5 & yellow_key > 0 & blue_key = 0 : 0;
+		room = 5 & yellow_key = 0 & blue_key > 0 : 6;
+		room = 6 & yellow_key > 0 & blue_key > 0 : {0, 5};
+		room = 6 & yellow_key > 0 & blue_key = 0 : 0;
+		room = 6 & yellow_key = 0 & blue_key > 0 : 5;
+		TRUE : room;
+	esac;
+	
+	next(room1_visited) := case
+		next(room) = 1 : TRUE;
+		TRUE : room1_visited;
+	esac;
+
+	next(room2_visited) := case
+		next(room) = 2 : TRUE;
+		TRUE : room2_visited;
+	esac;
+		
+	next(room3_visited) := case
+		next(room) = 3 : TRUE;
+		TRUE : room3_visited;
+	esac;
+		
+	next(room4_visited) := case
+		next(room) = 4 : TRUE;
+		TRUE : room4_visited;
+	esac;
+		
+	next(room5_visited) := case
+		next(room) = 5 : TRUE;
+		TRUE : room5_visited;
+	esac;
+		
+	next(room6_visited) := case
+		next(room) = 6 : TRUE;
+		TRUE : room6_visited;
+	esac;
+	
+	next(room1_first) := (!room1_visited) & next(room1_visited);
+	next(room2_first) := (!room2_visited) & next(room2_visited);
+	next(room3_first) := (!room3_visited) & next(room3_visited);
+	next(room4_first) := (!room4_visited) & next(room4_visited);
+	next(room5_first) := (!room5_visited) & next(room5_visited);
+	next(room6_first) := (!room6_visited) & next(room6_visited);
+	
+	next(yellow_key) := case
+		yellow_key < 5 & room = 0 & next(room) = 1 & next(room1_first) : yellow_key + 1;
+		yellow_key < 5 & room = 0 & next(room) = 3 & next(room3_first) : yellow_key + 1; 
+		yellow_key < 5 & room = 0 & next(room) = 4 & next(room4_first) : yellow_key + 1;
+		yellow_key > 0 & room = 0 & next(room) = 5 : yellow_key - 1;
+		yellow_key < 5 & room = 5 & next(room) = 6 & next(room6_first) : yellow_key + 1;
+		yellow_key > 0 & room = 0 & next(room) = 6 & !next(room6_first) : yellow_key - 1;
+		yellow_key > 0 & room = 5 & next(room) = 0 : yellow_key - 1;
+		yellow_key > 0 & room = 6 & next(room) = 0 : yellow_key - 1;
+		TRUE : yellow_key;
+	esac;
+	
+	next(blue_key) := case
+		blue_key > 0 & room = 0 & next(room) = 1 & !next(room1_first) : blue_key - 1;
+		blue_key > 0 & room = 1 & next(room) = 0 : blue_key - 1;
+		blue_key < 2 & room = 0 & next(room) = 2 & next(room2_first) : blue_key + 1;
+		blue_key > 0 & room = 0 & next(room) = 4 : blue_key - 1;
+		blue_key > 0 & room = 4 & next(room) = 0 : blue_key - 1;
+		blue_key > 0 & room = 5 & next(room) = 6 : blue_key - 1;
+		blue_key > 0 & room = 6 & next(room) = 5 : blue_key - 1;
+		TRUE : blue_key;
+	esac;
+	
+	next(red_key) := case
+		red_key > 0 & room = 0 & next(room) = 2 & !next(room2_first) : red_key - 1;
+		red_key > 0 & room = 2 & next(room) = 0 : red_key - 1;
+		red_key > 0 & room = 0 & next(room) = 3 : red_key - 1;
+		red_key > 0 & room = 3 & next(room) = 0 : red_key - 1;
+		TRUE: red_key;
+	esac;
+	
+	alg := room5_visited;
+		
+CTLSPEC EF(room = 0 & alg)

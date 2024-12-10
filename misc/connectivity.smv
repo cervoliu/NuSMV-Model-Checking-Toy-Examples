@@ -1,0 +1,12 @@
+MODULE main
+VAR
+    pos : {0, 1, 2, 3};
+ASSIGN
+    init(pos) := 0;
+    next(pos) := case
+                    (pos = 0) : {0, 1};
+                    (pos = 1) : {1, 2, 3};
+                    (pos = 2) : {0, 2};
+                    (pos = 3) : {3};
+                 esac;
+    CTLSPEC AG(!(pos = 3))

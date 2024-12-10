@@ -1,0 +1,50 @@
+MODULE main
+  VAR
+    x : 0..3;
+    y : 0..3;
+    boat : {left, right};
+
+  DEFINE
+    delta := next(x) - x + next(y) - y;
+  TRANS
+    (boat = left & 1<= delta & delta <= 2) | (boat = right & -2 <= delta & delta <= -1);
+    -- the boat must have at least 1, at most 2 passengers
+
+  ASSIGN
+    init(x) := 0;
+    init(y) := 0;
+    init(boat) := left;
+    
+    next(boat) := case
+      (boat = left) : right;
+      (boat = right) : left;
+    esac;
+
+    next(x) := case
+      (boat = left) & (x = 0) : 0..2;
+      (boat = left) & (x = 1) : 1..3;
+      (boat = left) & (x = 2) : 2..3;
+      (boat = left) & (x = 3) : 3;
+      (boat = right) & (x = 0) : 0;
+      (boat = right) & (x = 1) : 0..1;
+      (boat = right) & (x = 2) : 0..2;
+      (boat = right) & (x = 3) : 1..3;
+    esac;
+
+    next(y) := case
+      (boat = left) & (y = 0) : 0..2;
+      (boat = left) & (y = 1) : 1..3;
+      (boat = left) & (y = 2) : 2..3;
+      (boat = left) & (y = 3) : 3;
+      (boat = right) & (y = 0) : 0;
+      (boat = right) & (y = 1) : 0..1;
+      (boat = right) & (y = 2) : 0..2;
+      (boat = right) & (y = 3) : 1..3;
+    esac;
+
+  INVAR
+    ((x = 0) | (x >= y)) & ((x = 3) | (x <= y));
+    -- either no people, or #people >= #ghosts
+
+  CTLSPEC
+    AG !((x = 3) & (y = 3));
