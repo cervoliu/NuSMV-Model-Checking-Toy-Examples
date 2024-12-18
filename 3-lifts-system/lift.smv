@@ -6,30 +6,32 @@ MODULE Button(reset)
     on : boolean;
   ASSIGN
     init(on) := FALSE;
-	next(on) := case 
-      on  & reset  : FALSE;
-      !on & reset  : FALSE;
-      on  & !reset : TRUE;
-      !on & !reset : {FALSE, TRUE};
-	esac;
+    next(on) := case 
+        reset : FALSE;
+        on  & !reset : TRUE;
+        !on & !reset : {FALSE, TRUE};
+    esac;
 ----------------------------------------------------------------------------------------
 -- CABIN MODULE
 ----------------------------------------------------------------------------------------
-MODULE Cabin(move)
+MODULE Cabin(move, stop)
   VAR
     floor : 1..5;
     dir : -1..1;
+    door : {open, closed};
     f1 : Button(resetf1);
     f2 : Button(resetf2);
     f3 : Button(resetf3);
     f4 : Button(resetf4);
     f5 : Button(resetf5);
   DEFINE
-    resetf1 := f1.on & floor = 1;
-    resetf2 := f2.on & floor = 2;
-    resetf3 := f3.on & floor = 3;
-    resetf4 := f4.on & floor = 4;
-    resetf5 := f5.on & floor = 5;
+    resetf1 := floor = 1 & door = open;
+    resetf2 := floor = 2 & door = open;
+    resetf3 := floor = 3 & door = open;
+    resetf4 := floor = 4 & door = open;
+    resetf5 := floor = 5 & door = open;
+    inner_stop :=  f1.on & floor = 1 | f2.on & floor = 2 | f3.on & floor = 3 |
+                   f4.on & floor = 4 | f5.on & floor = 5;
     inreq_highest := case
       f5.on : 5;
       f4.on : 4;
@@ -47,17 +49,29 @@ MODULE Cabin(move)
       TRUE : 6;
     esac;
   ASSIGN
+    -- initialization
     init(dir) := 0;
+    init(floor) := 1;
+    init(door) := closed;
+
+    -- transition
     next(dir) := case
+      stop : dir;
       move = 1 : 1;
       move = -1 : -1;
       TRUE : 0;
     esac;
-    init(floor) := 1;
+    
     next(floor) := case
+      stop : floor;
       floor < 5 & move = 1 : floor + 1;
       floor > 1 & move = -1 : floor - 1;
       TRUE : floor;
+    esac;
+
+    next(door) := case
+      stop : open;
+      TRUE : closed;
     esac;
 ----------------------------------------------------------------------------------------
 -- CONTROLLER MODULE
@@ -75,15 +89,15 @@ MODULE Controller(l1)
     dn2 : Button(reset_dn2);
 
   DEFINE
-    reset_up1 := up1.on & l1.floor = 1 & l1_move = 1;
-    reset_up2 := up2.on & l1.floor = 2 & l1_move = 1;
-    reset_up3 := up3.on & l1.floor = 3 & l1_move = 1;
-    reset_up4 := up4.on & l1.floor = 4 & l1_move = 1;
+    reset_up1 := l1.floor = 1 & l1_stop;
+    reset_up2 := l1.floor = 2 & l1_stop;
+    reset_up3 := l1.floor = 3 & l1_stop;
+    reset_up4 := l1.floor = 4 & l1_stop;
 
-    reset_dn5 := dn5.on & l1.floor = 5 & l1_move = -1;
-    reset_dn4 := dn4.on & l1.floor = 4 & l1_move = -1;
-    reset_dn3 := dn3.on & l1.floor = 3 & l1_move = -1;
-    reset_dn2 := dn2.on & l1.floor = 2 & l1_move = -1;
+    reset_dn5 := l1.floor = 5 & l1_stop;
+    reset_dn4 := l1.floor = 4 & l1_stop;
+    reset_dn3 := l1.floor = 3 & l1_stop;
+    reset_dn2 := l1.floor = 2 & l1_stop;
 
     outreq_highest := case
       dn5.on          : 5;
@@ -111,15 +125,16 @@ MODULE Controller(l1)
       l1.dir < 0  : l1_req_lowest < l1.floor ? -1 : l1_req_highest > l1.floor ? 1 : 0;
     esac;
 
-  INVAR (up1.on & l1.floor = 1) -> (l1.inreq_highest > 1);
-  INVAR (up2.on & l1.floor = 2 & (l1.dir >= 0 | l1_req_lowest = 2)) -> (l1.inreq_highest > 2);
-  INVAR (up3.on & l1.floor = 3 & (l1.dir >= 0 | l1_req_lowest = 3)) -> (l1.inreq_highest > 3);
-  INVAR (up4.on & l1.floor = 4 & (l1.dir >= 0 | l1_req_lowest = 4)) -> (l1.inreq_highest > 4);
+    l1_outer_stop := case
+      l1.floor = l1_req_highest | l1.floor = l1_req_lowest : TRUE;
+      l1_move = 1 : (up1.on & l1.floor = 1 | up2.on & l1.floor = 2 |
+                     up3.on & l1.floor = 3 | up4.on & l1.floor = 4);
+      l1_move = -1 : (dn5.on & l1.floor = 5 | dn4.on & l1.floor = 4 |
+                      dn3.on & l1.floor = 3 | dn2.on & l1.floor = 2);
+      TRUE : FALSE;
+    esac;
 
-  INVAR (dn5.on & l1.floor = 5) -> (l1.inreq_lowest < 5);
-  INVAR (dn4.on & l1.floor = 4 & (l1.dir <= 0 | l1_req_highest = 4)) -> (l1.inreq_lowest < 4);
-  INVAR (dn3.on & l1.floor = 3 & (l1.dir <= 0 | l1_req_highest = 3)) -> (l1.inreq_lowest < 3);
-  INVAR (dn2.on & l1.floor = 2 & (l1.dir <= 0 | l1_req_highest = 2)) -> (l1.inreq_lowest < 2);
+    l1_stop := l1.inner_stop | l1_outer_stop;
 
 ----------------------------------------------------------------------------------------
 -- MAIN MODULE
@@ -127,7 +142,7 @@ MODULE Controller(l1)
 MODULE main
   VAR
     c : Controller(lift1);
-    lift1 : Cabin(c.l1_move);
+    lift1 : Cabin(c.l1_move, c.l1_stop);
 ----------------------------------------------------------------------------------------
 -- SPEC
 ----------------------------------------------------------------------------------------
