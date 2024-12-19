@@ -16,43 +16,58 @@ MODULE Button(reset)
 ----------------------------------------------------------------------------------------
 MODULE Cabin(move, stop)
   VAR
-    floor : 1..5;
+    -- floor : 1..5;
     dir : -1..1;
     door : {open, closed};
+    pos : 0..20;
     f1 : Button(resetf1);
     f2 : Button(resetf2);
     f3 : Button(resetf3);
     f4 : Button(resetf4);
     f5 : Button(resetf5);
   DEFINE
-    resetf1 := floor = 1 & door = open;
-    resetf2 := floor = 2 & door = open;
-    resetf3 := floor = 3 & door = open;
-    resetf4 := floor = 4 & door = open;
-    resetf5 := floor = 5 & door = open;
-    inner_stop :=  f1.on & floor = 1 | f2.on & floor = 2 | f3.on & floor = 3 |
-                   f4.on & floor = 4 | f5.on & floor = 5;
+    P1 := 0;
+    P2 := 5;
+    P3 := 10;
+    P4 := 15;
+    P5 := 20;
+    floor_at_1 := pos = P1;
+    floor_at_2 := pos = P2;
+    floor_at_3 := pos = P3;
+    floor_at_4 := pos = P4;
+    floor_at_5 := pos = P5;
+    resetf1 := floor_at_1 & door = open;
+    resetf2 := floor_at_2 & door = open;
+    resetf3 := floor_at_3 & door = open;
+    resetf4 := floor_at_4 & door = open;
+    resetf5 := floor_at_5 & door = open;
+    inner_stop :=  f1.on & floor_at_1 | 
+                   f2.on & floor_at_2 | 
+                   f3.on & floor_at_3 |
+                   f4.on & floor_at_4 | 
+                   f5.on & floor_at_5;
     inreq_highest := case
-      f5.on : 5;
-      f4.on : 4;
-      f3.on : 3;
-      f2.on : 2;
-      f1.on : 1;
-      TRUE : 0;
+      f5.on : P5;
+      f4.on : P4;
+      f3.on : P3;
+      f2.on : P2;
+      f1.on : P1;
+      TRUE : P1;
     esac;
     inreq_lowest := case
-      f1.on : 1;
-      f2.on : 2;
-      f3.on : 3;
-      f4.on : 4;
-      f5.on : 5;
-      TRUE : 6;
+      f1.on : P1;
+      f2.on : P2;
+      f3.on : P3;
+      f4.on : P4;
+      f5.on : P5;
+      TRUE : P5;
     esac;
   ASSIGN
     -- initialization
     init(dir) := 0;
-    init(floor) := 1;
+    --init(floor) := 1;
     init(door) := closed;
+    init(pos) := 0;
 
     -- transition
     next(dir) := case
@@ -62,12 +77,19 @@ MODULE Cabin(move, stop)
       TRUE : 0;
     esac;
     
-    next(floor) := case
-      stop : floor;
-      floor < 5 & move = 1 : floor + 1;
-      floor > 1 & move = -1 : floor - 1;
-      TRUE : floor;
+    next(pos) := case
+        stop : pos;
+        pos < P5 & move = 1 : pos + 1;
+        pos > P1 & move = -1 : pos - 1;
+        TRUE : pos;
     esac;
+
+    --next(floor) := case
+    --  stop : floor;
+    --  floor < 5 & move = 1 : floor + 1;
+    --  floor > 1 & move = -1 : floor - 1;
+    --  TRUE : floor;
+    --esac;
 
     next(door) := case
       stop : open;
@@ -76,7 +98,7 @@ MODULE Cabin(move, stop)
 ----------------------------------------------------------------------------------------
 -- CONTROLLER MODULE
 ----------------------------------------------------------------------------------------
-MODULE Controller(l1, l2)
+MODULE Controller(l1, l2, l3)
   VAR
     up1 : Button(reset_up1);
     up2 : Button(reset_up2);
@@ -89,32 +111,32 @@ MODULE Controller(l1, l2)
     dn2 : Button(reset_dn2);
 
   DEFINE
-    reset_up1 := l1.floor = 1 & l1_stop | l2.floor = 1 & l2_stop;
-    reset_up2 := l1.floor = 2 & l1_stop | l2.floor = 2 & l2_stop;
-    reset_up3 := l1.floor = 3 & l1_stop | l2.floor = 3 & l2_stop;
-    reset_up4 := l1.floor = 4 & l1_stop | l2.floor = 4 & l2_stop;
+    reset_up1 := l1.floor_at_1 & l1_stop | l2.floor_at_1 & l2_stop | l3.floor_at_1 & l3_stop;
+    reset_up2 := l1.floor_at_2 & l1_stop | l2.floor_at_2 & l2_stop | l3.floor_at_2 & l3_stop;
+    reset_up3 := l1.floor_at_3 & l1_stop | l2.floor_at_3 & l2_stop | l3.floor_at_3 & l3_stop;
+    reset_up4 := l1.floor_at_4 & l1_stop | l2.floor_at_4 & l2_stop | l3.floor_at_4 & l3_stop;
 
-    reset_dn5 := l1.floor = 5 & l1_stop | l2.floor = 5 & l2_stop;
-    reset_dn4 := l1.floor = 4 & l1_stop | l2.floor = 4 & l2_stop;
-    reset_dn3 := l1.floor = 3 & l1_stop | l2.floor = 3 & l2_stop;
-    reset_dn2 := l1.floor = 2 & l1_stop | l2.floor = 2 & l2_stop;
+    reset_dn5 := l1.floor_at_5 & l1_stop | l2.floor_at_5 & l2_stop | l3.floor_at_5 & l3_stop;
+    reset_dn4 := l1.floor_at_4 & l1_stop | l2.floor_at_4 & l2_stop | l3.floor_at_4 & l3_stop;
+    reset_dn3 := l1.floor_at_3 & l1_stop | l2.floor_at_3 & l2_stop | l3.floor_at_3 & l3_stop;
+    reset_dn2 := l1.floor_at_2 & l1_stop | l2.floor_at_2 & l2_stop | l3.floor_at_2 & l3_stop;
 
     outreq_highest := case
-      dn5.on          : 5;
-      up4.on | dn4.on : 4;
-      up3.on | dn3.on : 3;
-      up2.on | dn2.on : 2;
-      up1.on          : 1;
-      TRUE            : 0;
+      dn5.on          : l1.P5;
+      up4.on | dn4.on : l1.P4;
+      up3.on | dn3.on : l1.P3;
+      up2.on | dn2.on : l1.P2;
+      up1.on          : l1.P1;
+      TRUE            : l1.P1;
     esac;
 
     outreq_lowest := case
-      up1.on          : 1;
-      up2.on | dn2.on : 2;
-      up3.on | dn3.on : 3;
-      up4.on | dn4.on : 4;
-      dn5.on          : 5;
-      TRUE            : 6;
+      up1.on          : l1.P1;
+      up2.on | dn2.on : l1.P2;
+      up3.on | dn3.on : l1.P3;
+      up4.on | dn4.on : l1.P4;
+      dn5.on          : l1.P5;
+      TRUE            : l1.P5;
     esac;
 
     l1_req_highest := l1.inreq_highest > outreq_highest ? l1.inreq_highest : outreq_highest;
@@ -123,50 +145,82 @@ MODULE Controller(l1, l2)
     l2_req_highest := l2.inreq_highest > outreq_highest ? l2.inreq_highest : outreq_highest;
     l2_req_lowest := l2.inreq_lowest < outreq_lowest ? l2.inreq_lowest : outreq_lowest;
 
+    l3_req_highest := l3.inreq_highest > outreq_highest ? l3.inreq_highest : outreq_highest;
+    l3_req_lowest := l3.inreq_lowest < outreq_lowest ? l3.inreq_lowest : outreq_lowest;
+
     -- move signals
 
     l1_move := case
-      l1.dir >= 0 : l1_req_highest > l1.floor ? 1 : l1_req_lowest < l1.floor ? -1 : 0;
-      l1.dir < 0  : l1_req_lowest < l1.floor ? -1 : l1_req_highest > l1.floor ? 1 : 0;
+      l1.dir >= 0 : l1_req_highest > l1.pos ? 1 : l1_req_lowest < l1.pos ? -1 : 0;
+      l1.dir < 0  : l1_req_lowest < l1.pos ? -1 : l1_req_highest > l1.pos ? 1 : 0;
     esac;
 
     l2_move := case
-      l2.dir >= 0 : l2_req_highest > l2.floor ? 1 : l2_req_lowest < l2.floor ? -1 : 0;
-      l2.dir < 0  : l2_req_lowest < l2.floor ? -1 : l2_req_highest > l2.floor ? 1 : 0;
+      l2.dir >= 0 : l2_req_highest > l2.pos ? 1 : l2_req_lowest < l2.pos ? -1 : 0;
+      l2.dir < 0  : l2_req_lowest < l2.pos ? -1 : l2_req_highest > l2.pos ? 1 : 0;
+    esac;
+
+    l3_move := case
+      l3.dir >= 0 : l3_req_highest > l3.pos ? 1 : l3_req_lowest < l3.pos ? -1 : 0;
+      l3.dir < 0  : l3_req_lowest < l3.pos ? -1 : l3_req_highest > l3.pos ? 1 : 0;
     esac;
 
     -- stop signals
 
     l1_outer_stop := case
-      l1.floor = l1_req_highest | l1.floor = l1_req_lowest : TRUE;
-      l1_move = 1 : (up1.on & l1.floor = 1 | up2.on & l1.floor = 2 |
-                     up3.on & l1.floor = 3 | up4.on & l1.floor = 4);
-      l1_move = -1 : (dn5.on & l1.floor = 5 | dn4.on & l1.floor = 4 |
-                      dn3.on & l1.floor = 3 | dn2.on & l1.floor = 2);
+      l1.pos = l1_req_highest | l1.pos = l1_req_lowest : TRUE;
+      l1_move = 1 : (up1.on & l1.floor_at_1 | 
+                     up2.on & l1.floor_at_2 |
+                     up3.on & l1.floor_at_3 | 
+                     up4.on & l1.floor_at_4);
+      l1_move = -1 : (dn5.on & l1.floor_at_5 | 
+                      dn4.on & l1.floor_at_4 |
+                      dn3.on & l1.floor_at_3 | 
+                      dn2.on & l1.floor_at_2);
       TRUE : FALSE;
     esac;
 
     l1_stop := l1.inner_stop | l1_outer_stop;
 
     l2_outer_stop := case
-      l2.floor = l2_req_highest | l2.floor = l2_req_lowest : TRUE;
-      l2_move = 1 : (up1.on & l2.floor = 1 | up2.on & l2.floor = 2 |
-                     up3.on & l2.floor = 3 | up4.on & l2.floor = 4);
-      l2_move = -1 : (dn5.on & l2.floor = 5 | dn4.on & l2.floor = 4 |
-                      dn3.on & l2.floor = 3 | dn2.on & l2.floor = 2);
+      l2.pos = l2_req_highest | l2.pos = l2_req_lowest : TRUE;
+      l2_move = 1 : (up1.on & l2.floor_at_1 | 
+                     up2.on & l2.floor_at_2 |
+                     up3.on & l2.floor_at_3 | 
+                     up4.on & l2.floor_at_4);
+      l2_move = -1 : (dn5.on & l2.floor_at_5 | 
+                      dn4.on & l2.floor_at_4 |
+                      dn3.on & l2.floor_at_3 | 
+                      dn2.on & l2.floor_at_2);
       TRUE : FALSE;
     esac;
 
     l2_stop := l2.inner_stop | l2_outer_stop;
+
+    l3_outer_stop := case
+      l3.pos = l3_req_highest | l3.pos = l3_req_lowest : TRUE;
+      l3_move = 1 : (up1.on & l3.floor_at_1 | 
+                     up2.on & l3.floor_at_2 |
+                     up3.on & l3.floor_at_3 | 
+                     up4.on & l3.floor_at_4);
+      l3_move = -1 : (dn5.on & l3.floor_at_5 | 
+                      dn4.on & l3.floor_at_4 |
+                      dn3.on & l3.floor_at_3 | 
+                      dn2.on & l3.floor_at_2);
+      TRUE : FALSE;
+    esac;
+
+    l3_stop := l3.inner_stop | l3_outer_stop;
 
 ----------------------------------------------------------------------------------------
 -- MAIN MODULE
 ----------------------------------------------------------------------------------------
 MODULE main
   VAR
-    c : Controller(lift1, lift2);
+    c : Controller(lift1, lift2, lift3);
     lift1 : Cabin(c.l1_move, c.l1_stop);
     lift2 : Cabin(c.l2_move, c.l2_stop);
+    lift3 : Cabin(c.l3_move, c.l3_stop);
 ----------------------------------------------------------------------------------------
 -- SPEC
 ----------------------------------------------------------------------------------------
