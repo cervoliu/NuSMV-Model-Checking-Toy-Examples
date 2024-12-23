@@ -5,14 +5,15 @@ VAR
     sum : -16..15;
     i : 0..3;
     state : {start, loop, end};
+    overflow : boolean;
 
 DEFINE
     temp := sum + arr[i];
-
 ASSIGN
     init(i) := 0;
     init(sum) := 0;
     init(state) := start;
+    init(overflow) := FALSE;
 
     next(state) := case
         state = start : loop;
@@ -21,9 +22,9 @@ ASSIGN
         TRUE : state;
     esac;
 
-    init(arr[0]) := 15;
-    init(arr[1]) := 15;
-    init(arr[2]) := -15;
+    init(arr[0]) := -16..15;
+    init(arr[1]) := -16..15;
+    init(arr[2]) := -16..15;
 
     next(arr[0]) := arr[0];
     next(arr[1]) := arr[1];
@@ -40,6 +41,14 @@ ASSIGN
         TRUE : i;
     esac;
 
-LTLSPEC G (state = end -> sum = (arr[0] + arr[1] + arr[2]));
+    next(overflow) := case
+        overflow : TRUE;
+        state = loop & i < 3 & (temp > 15 | temp < -16) : TRUE;
+        TRUE : FALSE;
+    esac;
 
-LTLSPEC F (sum > 15 | sum < -16);
+CTLSPEC AG !overflow;
+
+LTLSPEC G (!overflow & state = end -> sum = (arr[0] + arr[1] + arr[2]));
+
+LTLSPEC G (state = end -> sum = (arr[0] + arr[1] + arr[2]));
