@@ -1,7 +1,7 @@
 MODULE main
 
 VAR
-    arr : array 0..2 of 0..100;
+    arr : array 0..2 of 1..3;
     i : 0..2;
     j : 1..3;
     min_idx : 0..2;
@@ -13,9 +13,9 @@ ASSIGN
     init(min_idx) := 0;
     init(state) := select;
 
-    init(arr[0]) := 2;
-    init(arr[1]) := 3;
-    init(arr[2]) := 1;
+    init(arr[0]) := 1..3;
+    init(arr[1]) := 1..3;
+    init(arr[2]) := 1..3;
 
     next(j) := case
         (state = end | i = 2) : 3;
@@ -60,6 +60,6 @@ ASSIGN
         TRUE : arr[2];
     esac;
 
-LTLSPEC ! F (state = end);
+LTLSPEC F (state = end);
 
-LTLSPEC ! F G (state = end & arr[0] <= arr[1] & arr[1] <= arr[2]);
+LTLSPEC G (state = end -> arr[0] <= arr[1] & arr[1] <= arr[2]);
