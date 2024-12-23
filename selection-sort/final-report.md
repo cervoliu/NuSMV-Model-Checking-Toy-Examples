@@ -9,11 +9,15 @@ $$ arr[0] \leq arr[1], arr[1] \leq arr[2], \dots $$
 
 以 $len=3$ 为例，正确性的 LTL spec 为
 
-$$ F (state = end) \land F G (state = end \land arr[0] \leq arr[1] \land arr[1] \leq arr[2]) $$
+$$ F (state = end) \land G (state = end \rightarrow arr[0] \leq arr[1] \land arr[1] \leq arr[2]) $$
 
 ## a1
 
-该算法是正确的，总能终止
+该算法是正确的，总能终止:
+```
+-- specification  F state = end  is true
+-- specification  G (state = end -> (arr[0] <= arr[1] & arr[1] <= arr[2]))  is true
+```
 
 ## a2
 
@@ -33,6 +37,49 @@ line 8:     swap(arr[i], arr[min_idx]);
 正确的例子: arr = {1, 2, 3}
 
 不正确的例子: arr = {2, 3, 1}
+
+```
+-- specification  F state = end  is true
+-- specification  G (state = end -> (arr[0] <= arr[1] & arr[1] <= arr[2]))  is false
+-- as demonstrated by the following execution sequence
+Trace Description: LTL Counterexample 
+Trace Type: Counterexample 
+  -> State: 1.1 <-
+    arr[0] = 2
+    arr[1] = 2
+    arr[2] = 1
+    i = 0
+    j = 1
+    min_idx = 0
+    state = select
+  -> State: 1.2 <-
+    j = 2
+  -> State: 1.3 <-
+    j = 3
+    min_idx = 2
+    state = swap
+  -> State: 1.4 <-
+    arr[0] = 1
+    arr[2] = 2
+    i = 1
+    j = 2
+    min_idx = 0
+    state = select
+  -> State: 1.5 <-
+    j = 3
+    state = swap
+  -> State: 1.6 <-
+    arr[0] = 2
+    arr[1] = 1
+    i = 2
+    state = select
+  -- Loop starts here
+  -> State: 1.7 <-
+    state = end
+  -- Loop starts here
+  -> State: 1.8 <-
+  -> State: 1.9 <-
+```
 
 ## a3
 
@@ -66,16 +113,62 @@ for (int i = 0; i < n; i++) {
 }
 ```
 
+正确性 spec: 
+```
+LTLSPEC G (-16 <= sum & sum <= 15);
+
+LTLSPEC G (state = end -> sum = (arr[0] + arr[1] + arr[2]));
+```
+
 ## b1
 
 会出现溢出的情况.
 
+```
+CTLSPEC AG !overflow;
+```
+会找出反例，说明存在一个状态 overflow 为 true.
+
 ## b2
 
 当加法不溢出时，算法是正确的.
+```
+-- specification  G ((!overflow & state = end) -> sum = (arr[0] + arr[1]) + arr[2])  is true
+```
 
 ## b3
 
-如果加减法真的溢出了，该算法依然是正确的。
-
-整形的加减法可以视作类似于模意义的加减法，更抽象地说，({-16..15},+) 是一个交换群。
+如果加减法真的溢出了，该算法是错误的。反例:
+```
+-- specification  G (state = end -> sum = (arr[0] + arr[1]) + arr[2])  is false
+-- as demonstrated by the following execution sequence
+Trace Description: LTL Counterexample 
+Trace Type: Counterexample 
+  -> State: 1.1 <-
+    arr[0] = 15
+    arr[1] = 15
+    arr[2] = -14
+    sum = 0
+    i = 0
+    state = start
+    temp = 15
+  -> State: 1.2 <-
+    state = loop
+  -> State: 1.3 <-
+    sum = 15
+    i = 1
+    temp = 30
+  -> State: 1.4 <-
+    sum = -2
+    i = 2
+    temp = -16
+  -> State: 1.5 <-
+    sum = -16
+    i = 3
+  -- Loop starts here
+  -> State: 1.6 <-
+    state = end
+  -- Loop starts here
+  -> State: 1.7 <-
+  -> State: 1.8 <-
+```
